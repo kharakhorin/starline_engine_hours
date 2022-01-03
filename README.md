@@ -1,3 +1,3 @@
-# starline_engine_hours
+# Моточасы StarLine
 
 Вычисление моточасов с помощью API StarLine Телематика
