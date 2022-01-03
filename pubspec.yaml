@@ -34,6 +34,10 @@ flutter_icons:
   ios: false
   image_path: "assets/car-engine.png"
 
+flutter_native_splash:
+  image: assets/car-engine.png
+  color: "42a5f5"
+
 flutter:
   uses-material-design: true
   assets:
