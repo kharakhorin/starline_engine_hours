@@ -4,4 +4,6 @@
 
 Приложение под Android для вычисления моточасов с помощью API StarLine Телематика
 
->![screen_record](https://github.com/kharakhorin/starline_engine_hours/blob/master/docs/img/screen_record.gif)
+<p align="center">
+  <img src="https://github.com/kharakhorin/starline_engine_hours/blob/master/docs/img/screen_record.gif?raw=true" alt="screen_record"/>
+</p>
