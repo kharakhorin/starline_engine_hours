@@ -9,6 +9,8 @@ class EngineHoursCalculator {
   List<int> stopCommands = [1042];
 
   EngineHoursCalculator(dynamic rawData) {
+    if (rawData.length < 2) return;
+
     List<StarlineEvent> allEvents = rawData
         .map<StarlineEvent>((json) => StarlineEvent.fromJson(json))
         .toList();
