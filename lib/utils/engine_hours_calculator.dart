@@ -19,21 +19,23 @@ class EngineHoursCalculator {
         .where((e) =>
             startCommands.contains(e.eventId) ||
             stopCommands.contains(e.eventId))
+        .toList()
+        .reversed
         .toList();
 
     if (engineEvents.length < 2) return;
 
-    if (startCommands.contains(engineEvents[0].eventId)) {
+    if (stopCommands.contains(engineEvents[0].eventId)) {
       engineEvents.removeAt(0);
     }
 
     for (int i = 0; i < engineEvents.length - 1; i += 2) {
-      if (startCommands.contains(engineEvents[i].eventId)) {
+      if (stopCommands.contains(engineEvents[i].eventId)) {
         i -= 1;
         continue;
       }
       engineSessions.add(EngineSession(
-          engineEvents[i + 1].eventTime, engineEvents[i].eventTime));
+          engineEvents[i].eventTime, engineEvents[i + 1].eventTime));
       totalHours += engineSessions.last.duration;
     }
     engineSessionsByDate =
