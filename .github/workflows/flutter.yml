@@ -1,7 +1,9 @@
 name: Flutter
 
-on: 
-  workflow_dispatch:
+on:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -24,8 +26,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
         with:
-          tag_name: ${{ github.run_id }}
-          release_name: Release ${{ github.run_number }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
