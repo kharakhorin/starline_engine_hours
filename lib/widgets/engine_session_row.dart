@@ -18,7 +18,7 @@ class EngineSessionsRow extends StatelessWidget {
   ExpansionTile sessionsList() {
     var list = <Widget>[];
     var dayDuration = const Duration();
-    for (var session in engineSessions.reversed) {
+    for (var session in engineSessions) {
       list.add(Padding(
           padding: const EdgeInsets.only(
             left: 16.0,
@@ -46,7 +46,9 @@ class EngineSessionsRow extends StatelessWidget {
             Text(
               dateFormatter.format(engineSessions[0].date),
             ),
-            Text(dayDuration.inHours.toString() + ' ч')
+            //Text(dayDuration.inHours.toString() + ' ч')
+            Text(
+                "${dayDuration.inHours}ч ${dayDuration.inMinutes.remainder(60)}мин")
           ]),
           leading: Icon(
             Icons.date_range,
