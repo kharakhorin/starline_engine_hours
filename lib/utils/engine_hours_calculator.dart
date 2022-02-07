@@ -38,8 +38,12 @@ class EngineHoursCalculator {
           engineEvents[i].eventTime, engineEvents[i + 1].eventTime));
       totalHours += engineSessions.last.duration;
     }
-    engineSessionsByDate =
-        engineSessions.groupListsBy((element) => element.date).values.toList();
+    engineSessionsByDate = engineSessions
+        .groupListsBy((element) => element.date)
+        .values
+        .toList()
+        .reversed
+        .toList();
   }
 }
 
