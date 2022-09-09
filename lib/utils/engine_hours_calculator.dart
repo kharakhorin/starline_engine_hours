@@ -5,8 +5,8 @@ class EngineHoursCalculator {
   Duration totalHours = const Duration();
   List<EngineSession> engineSessions = <EngineSession>[];
   List<List<EngineSession>> engineSessionsByDate = <List<EngineSession>>[];
-  List<int> startCommands = [1037, 20532];
-  List<int> stopCommands = [1042];
+  List<int> startCommands = [1037, 20532, 601];
+  List<int> stopCommands = [1042, 602];
 
   EngineHoursCalculator(dynamic rawData) {
     if (rawData.length < 2) return;
