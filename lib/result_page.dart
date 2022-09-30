@@ -91,13 +91,16 @@ class ResultsPage extends StatelessWidget {
               );
             } else {
               return AlertDialog(
-                  content: Text(response.data.toString()),
+                  content: SingleChildScrollView(
+                      scrollDirection: Axis.vertical, //.horizontal
+                      child: Text(response.data.toString())),
                   actions: <Widget>[
                     TextButton(
-                        child: const Text('Назад'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        })
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Назад'),
+                    )
                   ]);
             }
           } else {
