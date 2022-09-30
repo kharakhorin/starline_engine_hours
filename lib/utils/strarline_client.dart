@@ -21,6 +21,7 @@ class StarlineClient {
     (client.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
         (HttpClient client) {
       client.userAgent = userAgent;
+      return null;
     };
   }
 
