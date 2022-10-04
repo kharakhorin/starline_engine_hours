@@ -10,6 +10,7 @@ class StarlineClient {
   var userAgent = faker.internet.userAgent(osName: "Windows");
   var headers = {
     "content-type": "application/json",
+    "accept-language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
   };
   var client = Dio();
   var cookieJar = CookieJar();
