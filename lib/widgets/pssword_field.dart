@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class PasswordField extends StatefulWidget {
-  // ignore: use_key_in_widget_constructors
   const PasswordField(
-      {this.fieldKey,
+      {super.key,
+      this.fieldKey,
       this.hintText,
       this.labelText,
       this.controller,
@@ -16,7 +16,7 @@ class PasswordField extends StatefulWidget {
   final void Function(String)? onChanged;
 
   @override
-  _PasswordFieldState createState() => _PasswordFieldState();
+  State<PasswordField> createState() => _PasswordFieldState();
 }
 
 class _PasswordFieldState extends State<PasswordField> {

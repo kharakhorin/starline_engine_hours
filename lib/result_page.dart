@@ -17,11 +17,10 @@ class ResultsPage extends StatelessWidget {
   late Response<dynamic> historyResponse;
 
   ResultsPage(
-      {Key? key,
+      {super.key,
       required this.login,
       required this.pass,
-      required this.dateFrom})
-      : super(key: key);
+      required this.dateFrom});
 
   Future<dynamic> getHistory() async {
     try {
@@ -58,21 +57,20 @@ class ResultsPage extends StatelessWidget {
                               height: 150,
                               child: Container(
                                   alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blueAccent,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.blue[800]!,
+                                      width: 6,
+                                    ),
+                                  ),
                                   child: AutoSizeText(
-                                      engineHours.totalHours.inHours.toString(),
+                                      '${engineHours.totalHours.inHours}',
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 110)))),
-                          decoration: BoxDecoration(
-                            color: Colors.blueAccent,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.blue[800]!,
-                              width: 6,
-                            ),
-                          ),
-                        ),
+                                          fontSize: 110))))),
                       ),
                       floating: true,
                       expandedHeight: 200,

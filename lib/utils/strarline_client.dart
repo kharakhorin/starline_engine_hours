@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:faker/faker.dart';
 import 'package:dio/dio.dart';
-import 'package:dio/adapter.dart';
+import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 
@@ -19,10 +19,10 @@ class StarlineClient {
     client.options.headers = headers;
     client.options.baseUrl = 'https://starline-online.ru';
     client.interceptors.add(CookieManager(cookieJar));
-    (client.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
-        (HttpClient client) {
-      client.userAgent = userAgent;
-      return null;
+    (client.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+      final httpClient = HttpClient();
+      httpClient.userAgent = userAgent;
+      return httpClient;
     };
   }
 
@@ -30,7 +30,7 @@ class StarlineClient {
     var body = json.encode({"username": login, "password": pass});
     var response = await client.post('/rest/security/login', data: body);
     if (response.data.toString().isNotEmpty) {
-      throw Exception('Ошибка автоирзации:\n' + response.data.toString());
+      throw Exception('Ошибка автоирзации:\n${response.data}');
     }
     return response;
   }
@@ -39,7 +39,7 @@ class StarlineClient {
     var response = await client.get('/device');
     if (response.statusCode != 200) {
       throw Exception(
-          'Ошибка получения ид устройства:\n' + response.data.toString());
+          'Ошибка получения ид устройства:\n${response.data}');
     }
     return response.data["answer"]["devices"][0]["device_id"].toString();
   }
@@ -56,7 +56,7 @@ class StarlineClient {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Ошибка получения событий:\n' + response.data.toString());
+      throw Exception('Ошибка получения событий:\n${response.data}');
     }
 
     return response;

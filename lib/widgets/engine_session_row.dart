@@ -6,7 +6,7 @@ class EngineSessionsRow extends StatelessWidget {
   final List<EngineSession> engineSessions;
   final DateFormat dateFormatter = DateFormat('dd.MM.yyyy');
   final DateFormat hoursFormatter = DateFormat('HH:mm');
-  EngineSessionsRow(this.engineSessions, {Key? key}) : super(key: key);
+  EngineSessionsRow(this.engineSessions, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,9 +33,8 @@ class EngineSessionsRow extends StatelessWidget {
                 padding: const EdgeInsets.only(
                   left: 10.0,
                 ),
-                child: Text(hoursFormatter.format(session.start) +
-                    ' - ' +
-                    hoursFormatter.format(session.end)))
+                child: Text(
+                    '${hoursFormatter.format(session.start)} - ${hoursFormatter.format(session.end)}'))
           ]))));
       dayDuration += session.end.difference(session.start);
     }

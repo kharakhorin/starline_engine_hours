@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:starline_engine_hours/widgets/pssword_field.dart';
 import 'result_page.dart';
-import 'package:date_time_picker/date_time_picker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
@@ -10,7 +10,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,16 +29,17 @@ class MyApp extends StatelessWidget {
 }
 
 class LoginDemo extends StatefulWidget {
-  const LoginDemo({Key? key}) : super(key: key);
+  const LoginDemo({super.key});
 
   @override
-  _LoginDemoState createState() => _LoginDemoState();
+  State<LoginDemo> createState() => _LoginDemoState();
 }
 
 class _LoginDemoState extends State<LoginDemo> {
   final date = TextEditingController();
   final login = TextEditingController();
   final pass = TextEditingController();
+  DateTime selectedDate = DateTime.now();
   bool rememberMe = false;
   bool isButtonEnabled = false;
   late final SharedPreferences prefs;
@@ -54,7 +55,9 @@ class _LoginDemoState extends State<LoginDemo> {
     setState(() {
       login.text = (prefs.getString('login') ?? '');
       pass.text = (prefs.getString('pass') ?? '');
-      date.text = prefs.getString('date') ?? DateTime.now().toString();
+      selectedDate =
+          DateTime.tryParse(prefs.getString('date') ?? '') ?? DateTime.now();
+      date.text = DateFormat('dd.MM.yyyy').format(selectedDate);
       rememberMe = (prefs.getBool('rememberMe') ?? false);
     });
   }
@@ -63,7 +66,7 @@ class _LoginDemoState extends State<LoginDemo> {
     if (rememberMe) {
       prefs.setString('login', login.text);
       prefs.setString('pass', pass.text);
-      prefs.setString('date', date.text);
+      prefs.setString('date', selectedDate.toIso8601String());
       prefs.setBool('rememberMe', rememberMe);
     } else {
       prefs.clear();
@@ -132,15 +135,29 @@ class _LoginDemoState extends State<LoginDemo> {
                             SizedBox(
                                 //height: 100,
                                 width: 170,
-                                child: DateTimePicker(
-                                  //initialValue: date.toString(),
-                                  dateMask: 'dd.MM.yyyy',
-                                  icon: const Icon(Icons.event),
-                                  firstDate: DateTime.now()
-                                      .subtract(const Duration(days: 365)),
-                                  lastDate: DateTime.now(),
-                                  dateLabelText: 'Дата начала отсчёта',
+                                child: TextField(
                                   controller: date,
+                                  readOnly: true,
+                                  decoration: const InputDecoration(
+                                    icon: Icon(Icons.event),
+                                    labelText: 'Дата начала отсчёта',
+                                  ),
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: selectedDate,
+                                      firstDate: DateTime.now()
+                                          .subtract(const Duration(days: 365)),
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (picked != null) {
+                                      setState(() {
+                                        selectedDate = picked;
+                                        date.text = DateFormat('dd.MM.yyyy')
+                                            .format(picked);
+                                      });
+                                    }
+                                  },
                                 )),
                             Row(
                               children: [
@@ -160,10 +177,6 @@ class _LoginDemoState extends State<LoginDemo> {
                       width: 150.0,
                       height: 60.0,
                       child: ElevatedButton(
-                          child: const Text(
-                            'Посчитать',
-                            style: TextStyle(fontSize: 20),
-                          ),
                           onPressed: isButtonEnabled
                               ? () {
                                   saveFormData();
@@ -173,10 +186,13 @@ class _LoginDemoState extends State<LoginDemo> {
                                           builder: (_) => ResultsPage(
                                               login: login.text,
                                               pass: pass.text,
-                                              dateFrom:
-                                                  DateTime.parse(date.text))));
+                                              dateFrom: selectedDate)));
                                 }
-                              : null)),
+                              : null,
+                          child: const Text(
+                            'Посчитать',
+                            style: TextStyle(fontSize: 20),
+                          ))),
                 ],
               ),
             ),

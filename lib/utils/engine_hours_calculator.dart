@@ -1,5 +1,4 @@
-// ignore: implementation_imports
-import 'package:collection/src/iterable_extensions.dart';
+import 'package:collection/collection.dart';
 
 class EngineHoursCalculator {
   Duration totalHours = const Duration();
