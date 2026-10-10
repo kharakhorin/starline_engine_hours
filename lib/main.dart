@@ -14,15 +14,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: LoginDemo(),
-        localizationsDelegates: [
+        // Явная тема вместо базовой Material 3: фирменный синий seed,
+        // единые цвета для AppBar, кнопок и карточек.
+        theme: ThemeData(
+          colorScheme:
+              ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)),
+        ),
+        home: const LoginDemo(),
+        localizationsDelegates: const [
           GlobalWidgetsLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: [
+        supportedLocales: const [
           Locale('ru', 'RU')
         ]);
   }
@@ -87,96 +93,94 @@ class _LoginDemoState extends State<LoginDemo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
           title: const Text("Моточасы StarLine"),
         ),
         body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500),
+              constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 30.0, bottom: 20),
-                    child: Center(
-                      child: SizedBox(
-                          height: 150,
-                          width: 200,
-                          child: Image.asset('assets/car-engine.png')),
-                    ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: SizedBox(
+                        height: 150,
+                        width: 200,
+                        child: Image.asset('assets/car-engine.png')),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(15.0),
-                    child: TextField(
-                      controller: login,
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: login,
+                    onChanged: (val) => isFormDataEmpty(),
+                    decoration: const InputDecoration(
+                        labelText: 'Логин',
+                        hintText: 'Введите логин Starline'),
+                  ),
+                  const SizedBox(height: 16),
+                  PasswordField(
                       onChanged: (val) => isFormDataEmpty(),
-                      decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Логин',
-                          hintText: 'Введите логин Starline'),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                        left: 15.0, right: 15.0, top: 0, bottom: 15),
-                    child: PasswordField(
-                        onChanged: (val) => isFormDataEmpty(),
-                        controller: pass,
-                        labelText: 'Пароль',
-                        hintText: 'Введите пароль Starline'),
-                  ),
-                  Padding(
-                      padding: const EdgeInsets.only(
-                          left: 30.0, right: 30.0, top: 0, bottom: 25),
-                      child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            SizedBox(
-                                //height: 100,
-                                width: 170,
-                                child: TextField(
-                                  controller: date,
-                                  readOnly: true,
-                                  decoration: const InputDecoration(
-                                    icon: Icon(Icons.event),
-                                    labelText: 'Дата начала отсчёта',
-                                  ),
-                                  onTap: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: selectedDate,
-                                      firstDate: DateTime.now()
-                                          .subtract(const Duration(days: 365)),
-                                      lastDate: DateTime.now(),
-                                    );
-                                    if (picked != null) {
-                                      setState(() {
-                                        selectedDate = picked;
-                                        date.text = DateFormat('dd.MM.yyyy')
-                                            .format(picked);
-                                      });
-                                    }
-                                  },
-                                )),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: rememberMe,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      rememberMe = value!;
-                                    });
-                                  },
-                                ),
-                                const Text('Запомнить'),
-                              ],
-                            )
-                          ])),
+                      controller: pass,
+                      labelText: 'Пароль',
+                      hintText: 'Введите пароль Starline'),
+                  const SizedBox(height: 16),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SizedBox(
+                            width: 190,
+                            child: TextField(
+                              controller: date,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                icon: Icon(Icons.event),
+                                labelText: 'Дата начала отсчёта',
+                              ),
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: selectedDate,
+                                  firstDate: DateTime.now()
+                                      .subtract(const Duration(days: 365)),
+                                  lastDate: DateTime.now(),
+                                );
+                                if (picked != null) {
+                                  setState(() {
+                                    selectedDate = picked;
+                                    date.text = DateFormat('dd.MM.yyyy')
+                                        .format(picked);
+                                  });
+                                }
+                              },
+                            )),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            setState(() {
+                              rememberMe = !rememberMe;
+                            });
+                          },
+                          child: Row(
+                            children: [
+                              Checkbox(
+                                value: rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    rememberMe = value!;
+                                  });
+                                },
+                              ),
+                              const Text('Запомнить'),
+                            ],
+                          ),
+                        )
+                      ]),
+                  const SizedBox(height: 24),
                   SizedBox(
-                      width: 150.0,
-                      height: 60.0,
-                      child: ElevatedButton(
+                      height: 56,
+                      child: FilledButton(
                           onPressed: isButtonEnabled
                               ? () {
                                   saveFormData();
@@ -189,10 +193,7 @@ class _LoginDemoState extends State<LoginDemo> {
                                               dateFrom: selectedDate)));
                                 }
                               : null,
-                          child: const Text(
-                            'Посчитать',
-                            style: TextStyle(fontSize: 20),
-                          ))),
+                          child: const Text('Посчитать'))),
                 ],
               ),
             ),

@@ -30,7 +30,6 @@ class _PasswordFieldState extends State<PasswordField> {
       controller: widget.controller,
       onChanged: widget.onChanged,
       decoration: InputDecoration(
-        border: const OutlineInputBorder(),
         hintText: widget.hintText,
         labelText: widget.labelText,
         suffixIcon: GestureDetector(

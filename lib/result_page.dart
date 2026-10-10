@@ -1,10 +1,12 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'utils/engine_hours_calculator.dart';
 import 'utils/strarline_client.dart';
 import 'widgets/engine_session_row.dart';
+import 'widgets/trips_chart.dart';
 
 class ResultsPage extends StatefulWidget {
   final DateTime dateFrom;
@@ -226,12 +228,11 @@ class _ResultsPageState extends State<ResultsPage> {
     );
   }
 
-  /// Заголовок: пока авто не выбрано или оно одно — просто «Моточасы»;
-  /// при нескольких устройствах имя текущего авто становится кнопкой
-  /// переключателя (со стрелкой раскрывающегося списка).
+  /// Заголовок: имя текущего авто; при нескольких устройствах оно
+  /// становится кнопкой переключателя (со стрелкой раскрывающегося списка).
   Widget _buildAppBarTitle() {
     if (devices.length < 2 || selectedDevice == null) {
-      return const Text('Моточасы');
+      return Text(selectedDevice?.displayName ?? '');
     }
     return Tooltip(
       message: 'Сменить автомобиль',
@@ -247,7 +248,7 @@ class _ResultsPageState extends State<ResultsPage> {
           children: [
             Flexible(
               child: Text(
-                'Моточасы · ${selectedDevice!.displayName}',
+                selectedDevice!.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -297,46 +298,82 @@ class _ResultsPageState extends State<ResultsPage> {
     if (engineHours == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    return CustomScrollView(
-      slivers: <Widget>[
-        SliverAppBar(
-          flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-              margin: const EdgeInsets.all(10.0),
-              alignment: Alignment.center,
-              child: SizedBox(
-                  width: 150,
-                  height: 150,
-                  child: Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.blue[800]!,
-                          width: 6,
-                        ),
-                      ),
-                      child: AutoSizeText(
-                          '${engineHours!.totalHours.inHours}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 110))))),
-          ),
-          floating: true,
-          expandedHeight: 200,
-          automaticallyImplyLeading: false,
-          toolbarHeight: 0),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (BuildContext context, int index) {
-              return EngineSessionsRow(
-                  engineHours!.engineSessionsByDate[index]);
-            },
-            childCount: engineHours!.engineSessionsByDate.length,
-          ),
-        ),
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+      children: [
+        _buildSummaryCard(),
+        TripsChart(sessions: engineHours!.engineSessions),
+        for (final day in engineHours!.engineSessionsByDate)
+          EngineSessionsRow(day),
       ],
+    );
+  }
+
+  /// Русская форма множественного числа: сессия / сессии / сессий.
+  String _sessionsWord(int n) {
+    final n10 = n % 10;
+    final n100 = n % 100;
+    if (n10 == 1 && n100 != 11) return 'сессия';
+    if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return 'сессии';
+    return 'сессий';
+  }
+
+  /// Русская форма множественного числа: час / часа / часов.
+  String _hoursWord(int n) {
+    final n10 = n % 10;
+    final n100 = n % 100;
+    if (n10 == 1 && n100 != 11) return 'час';
+    if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return 'часа';
+    return 'часов';
+  }
+
+  /// Шапка с итогом: число моточасов за период, период и
+  /// статистика фильтра (сколько сессий учтено/исключено).
+  Widget _buildSummaryCard() {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final sessions = engineHours!.engineSessions;
+    final counted =
+        sessions.where((s) => s.status == SessionStatus.ok).length;
+    final excluded = sessions.length - counted;
+    // Тонированная карточка-«герой» в тонах primary.
+    final onContainer = scheme.onPrimaryContainer;
+    return Card(
+      margin: const EdgeInsets.all(8),
+      color: scheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: Column(
+          children: [
+            AutoSizeText(
+              '${engineHours!.totalHours.inHours}',
+              maxLines: 1,
+              style: textTheme.displayLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: onContainer,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _hoursWord(engineHours!.totalHours.inHours),
+              style:
+                  textTheme.titleMedium?.copyWith(color: onContainer),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'с ${DateFormat('dd.MM.yyyy').format(widget.dateFrom)} по сегодня',
+              style: textTheme.bodySmall?.copyWith(color: onContainer),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              excluded > 0
+                  ? 'учтено $counted ${_sessionsWord(counted)} · исключено $excluded'
+                  : 'учтено $counted ${_sessionsWord(counted)}',
+              style: textTheme.bodySmall?.copyWith(color: onContainer),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

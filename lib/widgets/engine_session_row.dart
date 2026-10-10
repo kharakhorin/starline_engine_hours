@@ -2,11 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:starline_engine_hours/utils/engine_hours_calculator.dart';
 import 'package:intl/intl.dart';
 
+/// Карточка одного дня: заголовок с датой и учтёнными часами,
+/// внутри — список сессий. Исключённые фильтром сессии — серым
+/// с причиной справа.
 class EngineSessionsRow extends StatelessWidget {
   final List<EngineSession> engineSessions;
-  final DateFormat dateFormatter = DateFormat('dd.MM.yyyy');
-  final DateFormat hoursFormatter = DateFormat('HH:mm');
-  EngineSessionsRow(this.engineSessions, {super.key});
+  const EngineSessionsRow(this.engineSessions, {super.key});
+
+  static final DateFormat _dateFormatter = DateFormat('dd.MM.yyyy');
+  static final DateFormat _hoursFormatter = DateFormat('HH:mm');
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    return hours > 0 ? '$hoursч $minutesм' : '$minutesм';
+  }
 
   /// Почему сессия не попала в сумму моточасов.
   String? _exclusionReason(EngineSession session) {
@@ -23,63 +33,70 @@ class EngineSessionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    var dayDuration = const Duration();
+    for (final session in engineSessions) {
+      if (session.status == SessionStatus.ok) {
+        dayDuration += session.duration;
+      }
+    }
     return Card(
-      child: sessionsList(),
+      margin: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      child: ExpansionTile(
+        // Явная форма без рамки: дефолтная M3-рамка ExpansionTile
+        // рисует тёмные линии сверху и снизу развёрнутой карточки.
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12))),
+        collapsedShape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12))),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _dateFormatter.format(engineSessions[0].date),
+                style: textTheme.titleMedium,
+              ),
+            ),
+            Text(
+              _formatDuration(dayDuration),
+              style: textTheme.titleMedium?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        children: [
+          for (final session in engineSessions)
+            _buildSessionRow(context, session),
+        ],
+      ),
     );
   }
 
-  ExpansionTile sessionsList() {
-    var list = <Widget>[];
-    var dayDuration = const Duration();
-    for (var session in engineSessions) {
-      var excluded = _exclusionReason(session) != null;
-      list.add(Padding(
-          padding: const EdgeInsets.only(
-            left: 16.0,
-          ),
-          child: ListTile(
-              title: Row(children: [
-            Icon(
-              Icons.timer,
-              color: excluded ? Colors.grey : Colors.blue[500],
-            ),
-            Padding(
-                padding: const EdgeInsets.only(
-                  left: 10.0,
-                ),
-                child: Text(
-                  '${hoursFormatter.format(session.start)} - ${hoursFormatter.format(session.end)}',
-                  style: excluded
-                      ? TextStyle(color: Colors.grey[600])
-                      : null,
-                )),
-            if (excluded)
-              Padding(
-                  padding: const EdgeInsets.only(left: 10.0),
-                  child: Text(
-                    _exclusionReason(session)!,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ))
-          ]))));
-      if (session.status == SessionStatus.ok) {
-        dayDuration += session.end.difference(session.start);
-      }
-    }
-    return ExpansionTile(
-        title: ListTile(
-          title:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              dateFormatter.format(engineSessions[0].date),
-            ),
-            Text(
-                "${dayDuration.inHours}ч ${dayDuration.inMinutes.remainder(60)}мин")
-          ]),
-          leading: Icon(
-            Icons.date_range,
-            color: Colors.blue[500],
-          ),
+  Widget _buildSessionRow(BuildContext context, EngineSession session) {
+    final scheme = Theme.of(context).colorScheme;
+    final reason = _exclusionReason(session);
+    return ListTile(
+      dense: true,
+      leading: Icon(
+        Icons.timer,
+        color: reason != null ? scheme.outline : scheme.primary,
+      ),
+      title: Text(
+        '${_hoursFormatter.format(session.start)} – ${_hoursFormatter.format(session.end)}',
+        style: reason != null
+            ? TextStyle(color: scheme.outline)
+            : null,
+      ),
+      trailing: Text(
+        reason ?? _formatDuration(session.duration),
+        style: TextStyle(
+          color: reason != null ? scheme.outline : scheme.onSurfaceVariant,
+          fontSize: 12,
         ),
-        children: list);
+      ),
+    );
   }
 }
