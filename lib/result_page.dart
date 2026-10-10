@@ -2,11 +2,15 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'utils/engine_hours_calculator.dart';
 import 'utils/strarline_client.dart';
 import 'widgets/engine_session_row.dart';
 import 'widgets/trips_chart.dart';
+
+/// Страница поддержки разработчика (CloudTips).
+final Uri _donationUrl = Uri.parse('https://pay.cloudtips.ru/p/20f12342');
 
 class ResultsPage extends StatefulWidget {
   final DateTime dateFrom;
@@ -186,6 +190,20 @@ class _ResultsPageState extends State<ResultsPage> {
     }
   }
 
+  /// Открывает страницу поддержки в браузере (платёжка CloudTips
+  /// рассчитана на браузер: редиректы в банковские приложения).
+  Future<void> _openDonation() async {
+    try {
+      await launchUrl(_donationUrl, mode: LaunchMode.externalApplication);
+    } on Exception {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось открыть страницу')),
+        );
+      }
+    }
+  }
+
   Future<void> _loadHistory(StarlineDevice device) async {
     setState(() {
       isLoading = true;
@@ -217,6 +235,11 @@ class _ResultsPageState extends State<ResultsPage> {
       appBar: AppBar(
         title: _buildAppBarTitle(),
         actions: [
+          IconButton(
+            tooltip: 'Поддержать разработчика',
+            icon: const Icon(Icons.volunteer_activism),
+            onPressed: _openDonation,
+          ),
           IconButton(
             tooltip: 'Настройки',
             icon: const Icon(Icons.settings),
