@@ -8,6 +8,19 @@ class EngineSessionsRow extends StatelessWidget {
   final DateFormat hoursFormatter = DateFormat('HH:mm');
   EngineSessionsRow(this.engineSessions, {super.key});
 
+  /// Почему сессия не попала в сумму моточасов.
+  String? _exclusionReason(EngineSession session) {
+    switch (session.status) {
+      case SessionStatus.noStop:
+      case SessionStatus.open:
+        return 'стоп не записан';
+      case SessionStatus.tooLong:
+        return 'слишком длинная';
+      case SessionStatus.ok:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -19,6 +32,7 @@ class EngineSessionsRow extends StatelessWidget {
     var list = <Widget>[];
     var dayDuration = const Duration();
     for (var session in engineSessions) {
+      var excluded = _exclusionReason(session) != null;
       list.add(Padding(
           padding: const EdgeInsets.only(
             left: 16.0,
@@ -27,16 +41,29 @@ class EngineSessionsRow extends StatelessWidget {
               title: Row(children: [
             Icon(
               Icons.timer,
-              color: Colors.blue[500],
+              color: excluded ? Colors.grey : Colors.blue[500],
             ),
             Padding(
                 padding: const EdgeInsets.only(
                   left: 10.0,
                 ),
                 child: Text(
-                    '${hoursFormatter.format(session.start)} - ${hoursFormatter.format(session.end)}'))
+                  '${hoursFormatter.format(session.start)} - ${hoursFormatter.format(session.end)}',
+                  style: excluded
+                      ? TextStyle(color: Colors.grey[600])
+                      : null,
+                )),
+            if (excluded)
+              Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+                  child: Text(
+                    _exclusionReason(session)!,
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ))
           ]))));
-      dayDuration += session.end.difference(session.start);
+      if (session.status == SessionStatus.ok) {
+        dayDuration += session.end.difference(session.start);
+      }
     }
     return ExpansionTile(
         title: ListTile(
@@ -45,7 +72,6 @@ class EngineSessionsRow extends StatelessWidget {
             Text(
               dateFormatter.format(engineSessions[0].date),
             ),
-            //Text(dayDuration.inHours.toString() + ' ч')
             Text(
                 "${dayDuration.inHours}ч ${dayDuration.inMinutes.remainder(60)}мин")
           ]),
