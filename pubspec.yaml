@@ -38,6 +38,8 @@ flutter_launcher_icons:
 flutter_native_splash:
   image: assets/car-engine.png
   color: "42a5f5"
+  # Картинка сплэша — на чёрном фоне, в тёмной теме под него и подгоняем.
+  color_dark: "000000"
 
 flutter:
   uses-material-design: true

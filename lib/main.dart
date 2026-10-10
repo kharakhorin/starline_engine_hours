@@ -12,15 +12,23 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // Единый seed: от него генерируются и светлая, и тёмная темы.
+  static const _seedColor = Color(0xFF1565C0);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
         debugShowCheckedModeBanner: false,
-        // Явная тема вместо базовой Material 3: фирменный синий seed,
-        // единые цвета для AppBar, кнопок и карточек.
+        // Светлая и тёмная темы от одного seed, переключение — по
+        // системной настройке устройства.
         theme: ThemeData(
-          colorScheme:
-              ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)),
+          colorScheme: ColorScheme.fromSeed(seedColor: _seedColor),
+        ),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: _seedColor,
+            brightness: Brightness.dark,
+          ),
         ),
         home: const LoginDemo(),
         localizationsDelegates: const [
