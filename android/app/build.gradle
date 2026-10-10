@@ -7,7 +7,6 @@ plugins {
 android {
     namespace "com.example.starline_engine_hours"
     compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
