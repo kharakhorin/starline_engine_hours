@@ -12,8 +12,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
-  http: ^1.2.2
   collection: ^1.18.0
   faker: ^2.2.0
   shared_preferences: ^2.3.2
