@@ -43,6 +43,26 @@ jobs:
     if: needs.check_version.outputs.version_change_status == 'changed' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
+      # Подпись релиза: keystore из secrets, чтобы у всех версий был
+      # один ключ и апдейты ставились поверх. Без secrets (форк) — debug.
+      - name: Restore signing config
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+            {
+              echo "storeFile=$RUNNER_TEMP/release.keystore"
+              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+              echo "keyAlias=$ANDROID_KEY_ALIAS"
+              echo "keyPassword=$ANDROID_KEY_PASSWORD"
+            } > android/key.properties
+          else
+            echo "Signing secrets not set, falling back to debug signing."
+          fi
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
