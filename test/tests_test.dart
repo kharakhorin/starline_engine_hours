@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:starline_engine_hours/utils/engine_hours_calculator.dart';
-import 'package:starline_engine_hours/utils/strarline_client.dart';
+import 'package:starline_engine_hours/utils/starline_client.dart';
 
 void main() {
   // Ручной тест: обращается к реальному API StarLine с реальными

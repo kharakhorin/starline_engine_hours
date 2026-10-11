@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'utils/engine_hours_calculator.dart';
-import 'utils/strarline_client.dart';
+import 'utils/starline_client.dart';
 import 'widgets/donation_button.dart';
 import 'widgets/engine_session_row.dart';
 import 'widgets/recaptcha_dialog.dart';
