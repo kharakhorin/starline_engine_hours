@@ -65,6 +65,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Суффикс «#имя» у gh release create меняет только подпись ассета,
+          # а не имя файла. Даём файлу нормальное имя до загрузки.
+          cp build/app/outputs/flutter-apk/app-release.apk starline_engine_hours.apk
           gh release create "${{ needs.check_version.outputs.new_version }}" \
             --title "${{ needs.check_version.outputs.new_version }}" \
-            build/app/outputs/flutter-apk/app-release.apk#starline_engine_hours.apk
+            starline_engine_hours.apk
