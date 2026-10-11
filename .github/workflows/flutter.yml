@@ -20,7 +20,9 @@ jobs:
         id: get_new_version
         uses: mikefarah/yq@v4
         with:
-          cmd: yq '.version' 'pubspec.yaml'
+          # Отрезаем билд-номер («2.0.0+8» → «2.0.0»), чтобы тег
+          # релиза оставался чистым vX.Y.Z.
+          cmd: yq '.version | split("+") | .[0]' 'pubspec.yaml'
       - name: Get current version
         id: get_current_version
         run: echo "version=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
