@@ -72,6 +72,10 @@ class StarlineClient {
   StarlineClient() {
     client.options.headers = headers;
     client.options.baseUrl = 'https://starline-online.ru';
+    // Без таймаутов повисший запрос крутит спиннер вечно: на плохой
+    // связи лучше понятная ошибка через полминуты, чем тишина.
+    client.options.connectTimeout = const Duration(seconds: 15);
+    client.options.receiveTimeout = const Duration(seconds: 30);
     client.interceptors.add(CookieManager(cookieJar));
     (client.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       final httpClient = HttpClient();
