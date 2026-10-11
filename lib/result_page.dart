@@ -6,12 +6,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'utils/engine_hours_calculator.dart';
 import 'utils/strarline_client.dart';
+import 'widgets/donation_button.dart';
 import 'widgets/engine_session_row.dart';
 import 'widgets/recaptcha_dialog.dart';
 import 'widgets/trips_chart.dart';
-
-/// Страница поддержки разработчика (CloudTips).
-final Uri _donationUrl = Uri.parse('https://pay.cloudtips.ru/p/20f12342');
 
 /// Личный кабинет: один вход через браузер снимает капчу/СМС,
 /// после этого логин из приложения проходит.
@@ -54,6 +52,10 @@ class _ResultsPageState extends State<ResultsPage> {
   /// Сырой ответ истории — чтобы менять порог без нового запроса.
   dynamic lastRawHistory;
   int maxSessionHours = 8;
+
+  /// Карточка поддержки: появляется после третьего успешного расчёта
+  /// и живёт, пока пользователь её не закроет крестиком.
+  bool _showDonationCard = false;
 
   @override
   void initState() {
@@ -270,6 +272,73 @@ class _ResultsPageState extends State<ResultsPage> {
     await _loadHistory(device);
   }
 
+  /// Пользователь закрыл карточку поддержки — больше не показываем.
+  Future<void> _hideDonationCard() async {
+    setState(() => _showDonationCard = false);
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('donation_card_dismissed', true);
+  }
+
+  /// Карточка поддержки под итогом: тихая, без давления — заголовок,
+  /// пара строк и кнопка. Крестик прячет её навсегда.
+  Widget _buildDonationCard() {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 6, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Мягкий кружок в тонах secondary: рифмуется с сердцем
+            // из AppBar, но не спорит с карточкой-итогом.
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: scheme.secondaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.volunteer_activism,
+                size: 20,
+                color: scheme.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Приложение бесплатное',
+                      style: textTheme.titleSmall),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Без рекламы и подписок. Если оно тебе помогает, '
+                    'автор будет рад поддержке',
+                    style: textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.tonal(
+                    onPressed: DonationButton.open,
+                    child: const Text('Поддержать'),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Больше не показывать',
+              visualDensity: VisualDensity.compact,
+              onPressed: _hideDonationCard,
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   EngineHoursCalculator _calculate() {
     return EngineHoursCalculator(lastRawHistory,
         maxSession: Duration(hours: maxSessionHours));
@@ -328,20 +397,6 @@ class _ResultsPageState extends State<ResultsPage> {
     }
   }
 
-  /// Открывает страницу поддержки в браузере (платёжка CloudTips
-  /// рассчитана на браузер: редиректы в банковские приложения).
-  Future<void> _openDonation() async {
-    try {
-      await launchUrl(_donationUrl, mode: LaunchMode.externalApplication);
-    } on Exception {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Не удалось открыть страницу')),
-        );
-      }
-    }
-  }
-
   Future<void> _loadHistory(StarlineDevice device) async {
     setState(() {
       isLoading = true;
@@ -353,6 +408,12 @@ class _ResultsPageState extends State<ResultsPage> {
       var prefs = await SharedPreferences.getInstance();
       await prefs.setString('device_id', device.deviceId);
       maxSessionHours = prefs.getInt('max_session_hours') ?? 8;
+      // Карточка поддержки: считаем успешные расчёты, с третьего —
+      // показываем (если не была закрыта ранее).
+      var calculations = (prefs.getInt('calculations_count') ?? 0) + 1;
+      await prefs.setInt('calculations_count', calculations);
+      _showDonationCard = calculations >= 3 &&
+          !(prefs.getBool('donation_card_dismissed') ?? false);
       lastRawHistory = response.data;
       setState(() {
         selectedDevice = device;
@@ -375,15 +436,11 @@ class _ResultsPageState extends State<ResultsPage> {
         title: _buildAppBarTitle(),
         actions: [
           IconButton(
-            tooltip: 'Поддержать разработчика',
-            icon: const Icon(Icons.volunteer_activism),
-            onPressed: _openDonation,
-          ),
-          IconButton(
             tooltip: 'Настройки',
             icon: const Icon(Icons.settings),
             onPressed: _showSettingsDialog,
           ),
+          const DonationButton(),
         ],
       ),
       body: _buildBody(),
@@ -474,6 +531,7 @@ class _ResultsPageState extends State<ResultsPage> {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
       children: [
         _buildSummaryCard(),
+        if (_showDonationCard) _buildDonationCard(),
         TripsChart(sessions: engineHours!.engineSessions),
         for (final day in engineHours!.engineSessionsByDate)
           EngineSessionsRow(day),

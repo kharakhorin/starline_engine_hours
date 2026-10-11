@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:starline_engine_hours/widgets/pssword_field.dart';
+import 'package:starline_engine_hours/widgets/donation_button.dart';
 import 'result_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -103,6 +104,7 @@ class _LoginDemoState extends State<LoginDemo> {
     return Scaffold(
         appBar: AppBar(
           title: const Text("Моточасы StarLine"),
+          actions: const [DonationButton()],
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
