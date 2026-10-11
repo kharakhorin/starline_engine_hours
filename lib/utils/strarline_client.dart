@@ -132,7 +132,7 @@ class StarlineClient {
   }
 
   /// Разбор ответа логина: по errors[].title понимаем, что случилось.
-  /// Возвращает null, если ошибки не разпознаны.
+  /// Возвращает null, если ошибки не распознаны.
   static Exception? parseLoginError(dynamic data) {
     if (data is! Map) return null;
     final errors = data['errors'];

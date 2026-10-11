@@ -280,7 +280,7 @@ class _ResultsPageState extends State<ResultsPage> {
   }
 
   /// Карточка поддержки под итогом: тихая, без давления — заголовок,
-  /// пара строк и кнопка. Крестик прячет её навсегда.
+  /// пара строк и кнопка.
   Widget _buildDonationCard() {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -408,8 +408,7 @@ class _ResultsPageState extends State<ResultsPage> {
       var prefs = await SharedPreferences.getInstance();
       await prefs.setString('device_id', device.deviceId);
       maxSessionHours = prefs.getInt('max_session_hours') ?? 8;
-      // Карточка поддержки: считаем успешные расчёты, с третьего —
-      // показываем (если не была закрыта ранее).
+      // Карточка поддержки: с третьего расчёта, если её не закрывали.
       var calculations = (prefs.getInt('calculations_count') ?? 0) + 1;
       await prefs.setInt('calculations_count', calculations);
       _showDonationCard = calculations >= 3 &&

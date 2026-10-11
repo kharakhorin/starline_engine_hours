@@ -13,7 +13,7 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Единый seed: от него генерируются и светлая, и тёмная темы.
+  // Единый seed для обеих тем.
   static const _seedColor = Color(0xFF1565C0);
 
   @override
@@ -84,8 +84,12 @@ class _LoginDemoState extends State<LoginDemo> {
       prefs.setString('date', selectedDate.toIso8601String());
       prefs.setBool('rememberMe', rememberMe);
     } else {
-      prefs.clear();
-      rememberMe = false;
+      // Чистим только данные формы, а не всё хранилище: выбор авто,
+      // порог сессий и отметка «не показывать» у карточки поддержки
+      // не должны страдать от снятой галочки.
+      for (final key in ['login', 'pass', 'date', 'rememberMe']) {
+        prefs.remove(key);
+      }
     }
   }
 

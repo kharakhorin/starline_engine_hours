@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Кнопка «Поддержать разработчика» (CloudTips) для AppBar.
-/// Ставится крайней справа: настройки — слева, донат — на почетном месте.
+/// Открывает [open] — им же пользуется карточка поддержки
+/// на экране результата.
 class DonationButton extends StatelessWidget {
   const DonationButton({super.key});
 
   // Платёжка CloudTips рассчитана на браузер: редиректы в банковские
-  // приложения, поэтому открываем вне webview приложения.
+  // приложения, поэтому открываем её внешним браузером.
   static final Uri _url = Uri.parse('https://pay.cloudtips.ru/p/20f12342');
 
   /// Открывает страницу поддержки в браузере. Общий код для кнопки
