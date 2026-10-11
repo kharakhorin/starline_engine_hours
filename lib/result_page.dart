@@ -7,10 +7,15 @@ import 'package:url_launcher/url_launcher.dart';
 import 'utils/engine_hours_calculator.dart';
 import 'utils/strarline_client.dart';
 import 'widgets/engine_session_row.dart';
+import 'widgets/recaptcha_dialog.dart';
 import 'widgets/trips_chart.dart';
 
 /// Страница поддержки разработчика (CloudTips).
 final Uri _donationUrl = Uri.parse('https://pay.cloudtips.ru/p/20f12342');
+
+/// Личный кабинет: один вход через браузер снимает капчу/СМС,
+/// после этого логин из приложения проходит.
+final Uri _siteUrl = Uri.parse('https://starline-online.ru');
 
 class ResultsPage extends StatefulWidget {
   final DateTime dateFrom;
@@ -34,7 +39,17 @@ class _ResultsPageState extends State<ResultsPage> {
   StarlineDevice? selectedDevice;
   EngineHoursCalculator? engineHours;
   String? error;
+
+  /// Ошибка именно входа: для неё показываем кнопку «открыть сайт».
+  bool isAuthError = false;
   bool isLoading = false;
+
+  /// Подтверждение входа: капча и код из СМС досылаются повторным
+  /// логином с этими значениями.
+  String? _captchaSid;
+  String? _recaptchaCode;
+  String? _smsCode;
+  bool _resendSms = false;
 
   /// Сырой ответ истории — чтобы менять порог без нового запроса.
   dynamic lastRawHistory;
@@ -52,7 +67,16 @@ class _ResultsPageState extends State<ResultsPage> {
       error = null;
     });
     try {
-      await starlineClient.login(widget.login, widget.pass);
+      await starlineClient.login(widget.login, widget.pass,
+          captchaSid: _captchaSid,
+          recaptchaCode: _recaptchaCode,
+          smsCode: _smsCode,
+          refreshTfaCode: _resendSms);
+      // Вход прошёл — подтверждения больше не нужны.
+      _captchaSid = null;
+      _recaptchaCode = null;
+      _smsCode = null;
+      _resendSms = false;
       devices = await starlineClient.getDevices();
       if (devices.isEmpty) {
         throw Exception('На аккаунте нет устройств StarLine');
@@ -66,10 +90,124 @@ class _ResultsPageState extends State<ResultsPage> {
         return;
       }
       await _loadHistory(device);
+    } on StarlineCaptchaException catch (ex) {
+      // Сервер сменил капчу — запоминаем новый sid и показываем
+      // reCAPTCHA (текст с картинки сайт не принимает).
+      _captchaSid = ex.sid;
+      _recaptchaCode = null;
+      _smsCode = null;
+      setState(() => isLoading = false);
+      await _showCaptchaDialog(ex);
+    } on StarlineSmsException catch (ex) {
+      _smsCode = null;
+      _resendSms = false;
+      setState(() => isLoading = false);
+      await _showSmsDialog(ex);
+    } on StarlineAuthException catch (ex) {
+      // Финальная ошибка — подтверждения сбрасываем, чтобы
+      // «Повторить» начинал с чистого входа.
+      _captchaSid = null;
+      _recaptchaCode = null;
+      _smsCode = null;
+      _resendSms = false;
+      setState(() {
+        error = ex.message;
+        isAuthError = true;
+        isLoading = false;
+      });
     } on Exception catch (ex) {
       setState(() {
         error = ex.toString();
+        isAuthError = false;
         isLoading = false;
+      });
+    }
+  }
+
+  /// Капча: та же Google reCAPTCHA, что на сайте StarLine, в мини-вебвью.
+  /// Токен уходит повторным логином с captchaSid + recaptchaCode.
+  Future<void> _showCaptchaDialog(StarlineCaptchaException ex) async {
+    if (!mounted) return;
+    String siteKey;
+    try {
+      siteKey = await starlineClient.fetchRecaptchaSiteKey();
+    } on Exception {
+      setState(() {
+        error = 'StarLine просит капчу, но получить её настройки '
+            'не удалось.\n\nВойди на starline.online в браузере и нажми '
+            '«Повторить».';
+        isAuthError = true;
+      });
+      return;
+    }
+    if (!mounted) return;
+    final token = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => RecaptchaDialog(
+        siteKey: siteKey,
+        isDark: Theme.of(context).brightness == Brightness.dark,
+      ),
+    );
+    if (token != null && token.isNotEmpty) {
+      _recaptchaCode = token;
+      _load();
+    } else {
+      setState(() {
+        error = '${ex.toString()}\n\n'
+            'Войди на starline.online в браузере и нажми «Повторить».';
+        isAuthError = true;
+      });
+    }
+  }
+
+  /// Код из СМС: сервер уже отправил его, вводим и подтверждаем
+  /// повторным логином с smsCode. Код можно переспросить —
+  /// refreshTfaCode (так делает сайт).
+  Future<void> _showSmsDialog(StarlineSmsException ex) async {
+    if (!mounted) return;
+    final code = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Код из СМС'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(ex.toString()),
+            TextField(
+              controller: code,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Код из СМС'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop(false);
+              _resendSms = true;
+              _load();
+            },
+            child: const Text('Прислать ещё раз'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Войти'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && code.text.trim().isNotEmpty) {
+      _smsCode = code.text.trim();
+      _load();
+    } else {
+      setState(() {
+        error = '${ex.toString()}\n\n'
+            'Повтори позже или отключи вход по СМС в личном кабинете.';
+        isAuthError = true;
       });
     }
   }
@@ -224,6 +362,7 @@ class _ResultsPageState extends State<ResultsPage> {
     } on Exception catch (ex) {
       setState(() {
         error = ex.toString();
+        isAuthError = false;
         isLoading = false;
       });
     }
@@ -300,6 +439,16 @@ class _ResultsPageState extends State<ResultsPage> {
               error!,
               textAlign: TextAlign.center,
             ),
+            if (isAuthError)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: TextButton.icon(
+                  onPressed: () => launchUrl(_siteUrl,
+                      mode: LaunchMode.externalApplication),
+                  icon: const Icon(Icons.open_in_new),
+                  label: const Text('Открыть starline.online'),
+                ),
+              ),
             const SizedBox(height: 16),
             OverflowBar(
               alignment: MainAxisAlignment.center,

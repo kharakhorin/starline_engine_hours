@@ -22,7 +22,8 @@ dependencies:
   intl: ^0.20.3
   flutter_native_splash: ^2.4.8
   url_launcher: ^6.3.3
-
+  webview_flutter: ^4.14.1
+  webview_flutter_android: ^4.14.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

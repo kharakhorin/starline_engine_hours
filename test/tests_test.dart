@@ -51,6 +51,82 @@ void main() {
     expect(devices[2].isOnline, isFalse); // статус не указан — офлайн
   });
 
+  test('StarlineClient.findErrorText extracts error text from response', () {
+    // Текст ошибки лежит на разной глубине и в разных полях.
+    expect(
+        StarlineClient.findErrorText({
+          'answer': {'error': {'code': 2, 'text': 'wrong credentials'}}
+        }),
+        'wrong credentials');
+    expect(
+        StarlineClient.findErrorText({
+          'answer': [
+            {'message': 'captcha required'}
+          ]
+        }),
+        'captcha required');
+    // Нет текста — null (HTML капчи, пустые поля, мусор).
+    expect(StarlineClient.findErrorText('<!DOCTYPE html>'), isNull);
+    expect(StarlineClient.findErrorText({'desc': '   '}), isNull);
+    expect(StarlineClient.findErrorText(null), isNull);
+  });
+
+  test('StarlineClient.parseLoginError recognizes real auth failures', () {
+    // Неверный пароль.
+    expect(
+        StarlineClient.parseLoginError({
+          'errors': [
+            {'code': 400, 'title': 'index.error.wrongUserNameOrPassword'}
+          ]
+        }),
+        isA<StarlineAuthException>().having(
+            (e) => e.message, 'message', contains('Неверный логин или пароль')));
+
+    // Капча: sid и картинка уходят в диалог.
+    final captcha = StarlineClient.parseLoginError({
+      'errors': [
+        {
+          'code': 429,
+          'title': 'index.error.captcha',
+          'meta': {
+            'message': 'Captcha needed.',
+            'captchaSid': 'fake-sid-123',
+            'captchaImg': 'https://id.starline.ru/apiV3/captcha/fake-sid-123',
+          }
+        }
+      ]
+    });
+    expect(captcha, isA<StarlineCaptchaException>());
+    expect((captcha as StarlineCaptchaException).sid, 'fake-sid-123');
+    expect(captcha.imageUrl, contains('fake-sid-123'));
+
+    // Второй фактор по СМС: телефон замаскирован, есть лимиты.
+    final sms = StarlineClient.parseLoginError({
+      'errors': [
+        {
+          'code': 401,
+          'title': 'TFA_REQUIRED',
+          'meta': {'type': 'sms', 'phone': '7***90', 'attemptsLeft': 3, 'ttl': 151}
+        }
+      ]
+    });
+    expect(sms, isA<StarlineSmsException>());
+    expect((sms as StarlineSmsException).phone, '7***90');
+    expect(sms.attemptsLeft, 3);
+    expect(sms.ttlSeconds, 151);
+
+    // Незнакомая ошибка и мусор.
+    expect(
+        StarlineClient.parseLoginError({
+          'errors': [
+            {'code': 500, 'title': 'index.error.someNewThing'}
+          ]
+        }),
+        isA<StarlineAuthException>());
+    expect(StarlineClient.parseLoginError({}), isNull);
+    expect(StarlineClient.parseLoginError('html'), isNull);
+  });
+
   test('EngineHoursCalculator parses sessions from raw history', () {
     var calc = EngineHoursCalculator(
         json.decode(File('test/rawHistory.json').readAsStringSync()));
