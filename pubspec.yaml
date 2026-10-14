@@ -2,7 +2,7 @@ name: starline_engine_hours
 description: Вычисление моточасов с помощью API StarLine Телематика
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 2.0.0+9
+version: 2.0.1+10
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
