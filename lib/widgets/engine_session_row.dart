@@ -15,7 +15,10 @@ class EngineSessionsRow extends StatelessWidget {
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
-    return hours > 0 ? '$hoursч $minutesм' : '$minutesм';
+    if (hours > 0) return '$hoursч $minutesм';
+    // Сессии короче минуты показываем в секундах — иначе реальный
+    // короткий запуск выглядит фантомом «0м».
+    return minutes > 0 ? '$minutesм' : '${duration.inSeconds}с';
   }
 
   /// Почему сессия не попала в сумму моточасов.

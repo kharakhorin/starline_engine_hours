@@ -44,6 +44,15 @@ class EngineHoursCalculator {
         .reversed
         .toList();
 
+    // Одно и то же событие иногда прилетает дважды (баг уже встречался
+    // в 1.x): дубль ломает чередование старт/стоп и рождает фантомные
+    // нулевые сессии — убираем до сборки.
+    final seen = <String>{};
+    engineEvents = engineEvents
+        .where((e) =>
+            seen.add('${e.eventId}#${e.eventTime.millisecondsSinceEpoch}'))
+        .toList();
+
     if (engineEvents.isEmpty) return;
 
     // В чистом логе события движка строго чередуются: старт, стоп, старт…
@@ -65,8 +74,12 @@ class EngineHoursCalculator {
           // Стоп без парного старта: старт потерян или был до окна истории.
           continue;
         }
-        engineSessions
-            .add(EngineSession(openStart.eventTime, event.eventTime));
+        // Старт и стоп в одну и ту же секунду — не сессия (двигатель
+        // столько не работает): артефакт истории, в список не берём.
+        if (openStart.eventTime != event.eventTime) {
+          engineSessions
+              .add(EngineSession(openStart.eventTime, event.eventTime));
+        }
         openStart = null;
       }
     }

@@ -235,4 +235,31 @@ void main() {
     expect(calc.engineSessions.length, 1);
     expect(calc.totalHours, const Duration(hours: 1));
   });
+
+  test('EngineHoursCalculator deduplicates identical events', () {
+    // API иногда отдаёт одно событие дважды — дубль старта порождал
+    // фантомную нулевую сессию «стоп не записан».
+    var day = DateTime(2026, 1, 10);
+    var calc = EngineHoursCalculator([
+      engineEvent(stopId, day.add(const Duration(hours: 12))),
+      engineEvent(stopId, day.add(const Duration(hours: 12))), // дубль
+      engineEvent(startId, day.add(const Duration(hours: 10))),
+      engineEvent(startId, day.add(const Duration(hours: 10))), // дубль
+    ]);
+    expect(calc.engineSessions.length, 1);
+    expect(calc.engineSessions.single.status, SessionStatus.ok);
+    expect(calc.totalHours, const Duration(hours: 2));
+  });
+
+  test('EngineHoursCalculator drops zero-second sessions', () {
+    // Старт и стоп в одну и ту же секунду — артефакт, не сессия.
+    var day = DateTime(2026, 1, 10);
+    var t = day.add(const Duration(hours: 10));
+    var calc = EngineHoursCalculator([
+      engineEvent(stopId, t),
+      engineEvent(startId, t),
+    ]);
+    expect(calc.engineSessions, isEmpty);
+    expect(calc.totalHours, Duration.zero);
+  });
 }
